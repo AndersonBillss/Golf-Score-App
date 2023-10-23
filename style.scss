@@ -1,11 +1,180 @@
 
-.button{
-    border: 2px gray solid;
-    border-radius: 10px;
+body{
+    display: flex;
+    justify-content: center;
+}
+ul{
+    list-style: none;
+    padding: 0;
+}
+li{
+    margin: 10px;
     padding: 5px 10px;
-    background-color: rgb(227, 227, 227);
+    font-size: 24px;
+    align-items: center;
+}
+h1{
+    display: flex;
+    justify-content: center;
+    padding: 5px;
+    width: 100%;
+    background-color: darkgreen;
+    color: white;
+    border: 5px solid white;
+}
+
+table{
+    border-collapse: collapse;
+    font-size: 20px;
+    margin: 20px 10px;
+}
+th, td{
+    border: 3px gray solid;  
+    padding: 3px 5px;  
+}
+
+.containerRow.reverse{
+    flex-direction: row-reverse;
+}
+.containerRow{
+    display: flex;
+    justify-content: left;
+    flex-wrap: wrap;
+    justify-self: center;
+}
+.containercolumn{
+    display: flex;
+    flex-direction: column;
+    justify-self: center;
+}
+.main-container{
+    flex-grow: 1;
+    max-width: 1600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: lightgrey;
+    margin: 15px 20px;
+}
+
+#options-container{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+#options-container option{
+    background-color: darkgreen;
+    border: 5px white solid;
+    margin: 3px;
+    padding: 3px 10px;
+    color: lightgray;
+}
+
+#scorecard-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+#playerCount{
+    width: 150px;
+    margin: 0;
+}
+#teeBoxes{
+justify-content: center;
+}
+
+.submit{
+    background-color: darkgreen;
+    padding: 2px 5px;
+    margin: 15px;
+    border-radius: 5px;
+    color: lightgrey;
+    width: min-content;
+}
+.error{
+    color: red;
+}
+.suggestion{
+    color: gray;
+}
+
+.players{
+    margin: 15px 30px;
+    justify-content: center;
+    max-width: 600px;
+}
+.players input{
+    width: 100px;
 }
 .button:hover{
-    filter: brightness(80%)!important;
+    filter: brightness(90%);
     cursor: pointer;
+}
+.button:active{
+    filter: brightness(110%);
+}
+.selected{
+    background-color: rgb(154, 116, 19) !important;
+}
+.teebox-selected{
+    box-shadow: 0 0 0 3px darkblue;
+}
+.arrow{
+    margin: 0 25px;
+    color: gray;
+    font-size: 36px;
+}
+
+.red{
+    background-color: red;
+}
+.black{
+    background-color: black;
+    color: white;
+}
+.blue{
+    background-color: blue;
+}
+.white{
+    background-color: white;
+}
+.yellow{
+    background-color: yellow;
+}
+.bordered{
+    border: 3px rgba(0, 0, 0, 0.5) solid;
+}
+
+
+@media (min-width:1600px){
+    option{
+        font-size: 22px;
+    }
+    table{
+        font-size: 24px;
+    }
+}
+@media (min-width:1000px){
+    option{
+        font-size: 20px;
+    }
+    table{
+        font-size: 22px;
+    }
+}
+@media (max-width:500px){
+    option{
+        font-size: 14px;
+    }
+    table{
+        font-size: 16px;
+    }
+
+}
+@media (max-width:350px){
+    input{
+        width: 75px;
+    }
+
 }
