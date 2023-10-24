@@ -1,8 +1,9 @@
 document.querySelector("#test").addEventListener("click", () => {
-    console.log(window.innerWidth)
-    if(document.getElementById('golfScoreTable') != null){
-        console.log(document.getElementById('golfScoreTable').getBoundingClientRect().width)
-    }
+    document.getElementById('golfScorePrevArrow').addEventListener('click', () => {
+        console.log('a')
+        currentRow = prevRow
+        renderTable()
+    })
 })
 
 class Player {
@@ -31,8 +32,10 @@ let selectedTeeBoxIndex
 let golfScoreTableRow
 let tableElementNum
 let currentRow
-let prevRow
+let prevRow = 0
 let columnCount
+let tableHtmlLabels
+let rowLength
 
 async function getAvailableCourses() {
     const url = 'https://exquisite-pastelito-9d4dd1.netlify.app/golfapi/courses.json';
@@ -132,7 +135,6 @@ function enterNames(){
     let teeBoxesHtml = `<ul class="containerRow reverse" id="teeBoxes">`
     for(i=0; i<teeBoxes.length; i++){
             if (teeBoxes[i].teeColorType != null){
-            console.log(teeBoxes[i].teeType)
             teeBoxesHtml += `<li class="` + teeBoxes[i].teeColorType + ` button bordered teebox" id="teebox` + i + `">` + teeBoxes[i].teeType + `</li>`
         }   
     }
@@ -154,7 +156,6 @@ function enterNames(){
             }
             this.classList.add('teebox-selected')
             selectedTeeBoxIndex = Number(this.id.slice(-1))
-            console.log(selectedTeeBoxIndex)
         })
     }
 
@@ -168,7 +169,6 @@ function checkNameValidity(){
     playerNames = []
 
 
-    console.log(document.getElementsByClassName('teebox-selected').length)
     if(document.getElementsByClassName('teebox-selected').length == 0){
         document.getElementById('playerNameWarning').innerText = "Must select a tee type"  
         document.getElementById('playerNameSuggestion').innerText = ""
@@ -215,19 +215,17 @@ function renderScorecard(){
         document.getElementById('scorecard-container').innerText = ""
     }
 
-
     players = []
     for(i=0; i<playerNames.length; i++){
         players[i] = new Player(playerNames[i])
     }
-    let tableHtmlLabels = `<table id="golfScoreTable">`
+    tableHtmlLabels = `<table id="golfScoreTable">`
     tableHtmlLabels += `
     <tr class="golfScoreTableRow"><th>Hole</th></tr>
     <tr class="golfScoreTableRow"><th>Yardage</th></tr>
     <tr class="golfScoreTableRow"><th>Par</th></tr>
     <tr class="golfScoreTableRow"><th>Handicap</th></tr>
     `
-
     for(i=0; i<players.length; i++){
         tableHtmlLabels += `
         <tr class="golfScoreTableRow playerRow">
@@ -236,99 +234,54 @@ function renderScorecard(){
         `
     }
     tableHtmlLabels += `</table>
-    <div id="golfScoreArrows"></div>
+    <div id="golfScoreArrows">
+        <div class="button arrow" id="leftGolfScoreArrow"></div>
+        <div class="button arrow" id="rightGolfScoreArrow"></div>
+    </div>
     `
+    currentRow = 0
+    renderTable()
+}
 
+
+function renderTable(){
     tableHtml = tableHtmlLabels
-
     document.getElementById('scorecard-container').innerHTML = tableHtml
-
     golfScoreTableRow = document.getElementsByClassName('golfScoreTableRow')
 
-    for(i=0; i<Object.keys(courseDetails.holes).length; i++){
-        if(document.getElementById('golfScoreTable').getBoundingClientRect().width < window.innerWidth-150){
+    for(i=currentRow; i<Object.keys(courseDetails.holes).length; i++){
+        if(document.getElementById('golfScoreTable').getBoundingClientRect().width < window.innerWidth-125){
             golfScoreTableRow[0].innerHTML += `<td>` + courseDetails.holes[i].hole + `</td>`
             golfScoreTableRow[1].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].yards + `</td>`
             golfScoreTableRow[2].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].par + `</td>`
             golfScoreTableRow[3].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].hcp + `</td>`
-            document.getElementById('golfScoreArrows').innerHTML = ``
+
             columnCount = i+1
-            currentRow = i+1
-        } else {
-            if(i==0){
-                return
+            prevRow = columnCount-(rowLength+(columnCount-currentRow))
+
+            if(currentRow > 0){
+                document.getElementById('leftGolfScoreArrow').innerHTML = `
+                <i class="fa-solid fa-arrow-left" id="golfScorePrevArrow"></i>
+                `
+                document.getElementById('golfScorePrevArrow').addEventListener('click', () => {
+                    currentRow = prevRow
+                    renderTable()
+                })
             }
-            document.getElementById('golfScoreArrows').innerHTML = `
-            <i class="fa-solid fa-arrow-right button arrow" id="golfScoreNextArrow"></i>
-            `
-            document.getElementById('golfScoreNextArrow').addEventListener('click', renderScorecardNext)
-            prevRow = 0
-        }
-    }
-}
-function renderScorecardNext(){
-    golfScoreTableRow[0].innerHTML = `<tr class="golfScoreTableRow"><th>Hole</th></tr>`
-    golfScoreTableRow[1].innerHTML = `<tr class="golfScoreTableRow"><th>Yardage</th></tr>`
-    golfScoreTableRow[2].innerHTML = `<tr class="golfScoreTableRow"><th>Par</th></tr>`
-    golfScoreTableRow[3].innerHTML = `<tr class="golfScoreTableRow"><th>Handicap</th></tr>`
-
-
-    let number = currentRow
-    for(i=number; i<Object.keys(courseDetails.holes).length; i++){
-        if(document.getElementById('golfScoreTable').getBoundingClientRect().width < window.innerWidth-150){
-            golfScoreTableRow[0].innerHTML += `<td>` + courseDetails.holes[i].hole + `</td>`
-            golfScoreTableRow[1].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].yards + `</td>`
-            golfScoreTableRow[2].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].par + `</td>`
-            golfScoreTableRow[3].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].hcp + `</td>`
-            currentRow = i+1
-
-            prevRow = number-columnCount
-            document.getElementById('golfScoreArrows').innerHTML = `
-            <i class="fa-solid fa-arrow-left button arrow" id="golfScorePrevArrow"></i>
-            `
-            document.getElementById("golfScorePrevArrow").addEventListener('click', renderScorecardPrev)
         } else {
-
-            document.getElementById('golfScoreArrows').innerHTML += `
-            <i class="fa-solid fa-arrow-right button arrow" id="golfScoreNextArrow"></i>
-            `
-            document.getElementById("golfScorePrevArrow").addEventListener('click', renderScorecardPrev)
-            document.getElementById("golfScoreNextArrow").addEventListener('click', renderScorecardNext)
+            if(i < Object.keys(courseDetails.holes).length){
+                document.getElementById('rightGolfScoreArrow').innerHTML = `
+                <i class="fa-solid fa-arrow-right" id="golfScoreNextArrow"></i>
+                `
+                rowLength = (i-currentRow)
+                document.getElementById('golfScoreNextArrow').addEventListener('click', () => {
+                    currentRow = columnCount
+                    renderTable()
+                })
+            }
             return
         }
-    }
-}
-function renderScorecardPrev(){
-    golfScoreTableRow[0].innerHTML = `<tr class="golfScoreTableRow"><th>Hole</th></tr>`
-    golfScoreTableRow[1].innerHTML = `<tr class="golfScoreTableRow"><th>Yardage</th></tr>`
-    golfScoreTableRow[2].innerHTML = `<tr class="golfScoreTableRow"><th>Par</th></tr>`
-    golfScoreTableRow[3].innerHTML = `<tr class="golfScoreTableRow"><th>Handicap</th></tr>`
 
-
-    let number = prevRow
-    for(i=number; i<Object.keys(courseDetails.holes).length; i++){
-        if(document.getElementById('golfScoreTable').getBoundingClientRect().width < window.innerWidth-150){
-            golfScoreTableRow[0].innerHTML += `<td>` + courseDetails.holes[i].hole + `</td>`
-            golfScoreTableRow[1].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].yards + `</td>`
-            golfScoreTableRow[2].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].par + `</td>`
-            golfScoreTableRow[3].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].hcp + `</td>`
-            document.getElementById('golfScoreArrows').innerHTML = `<i class="fa-solid fa-arrow-left button arrow" id="golfScorePrevArrow"></i>`
-            document.getElementById("golfScorePrevArrow").addEventListener('click', renderScorecard)
-            currentRow = i+1
-            document.getElementById('golfScoreArrows').innerHTML = `
-            <i class="fa-solid fa-arrow-right button arrow" id="golfScoreNextArrow"></i>
-            `
-            document.getElementById("golfScoreNextArrow").addEventListener('click', renderScorecardNext)
-                if(number > 0){
-                prevRow = number-columnCount
-                document.getElementById('golfScoreArrows').innerHTML = `
-                <i class="fa-solid fa-arrow-left button arrow" id="golfScorePrevArrow"></i>
-                <i class="fa-solid fa-arrow-right button arrow" id="golfScoreNextArrow"></i>
-                `
-                document.getElementById("golfScorePrevArrow").addEventListener('click', renderScorecardPrev)
-                document.getElementById("golfScoreNextArrow").addEventListener('click', renderScorecardNext)
-            }
-        }
     }
 }
 
@@ -336,6 +289,7 @@ function renderScorecardPrev(){
 window.onresize = updateTableWidth
 function updateTableWidth(){
     if(document.getElementById('golfScoreTable') != null){
-        renderScorecard()
+        currentRow = 0
+        renderTable()
     }
 }

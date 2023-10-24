@@ -93,6 +93,14 @@ th, td {
   justify-content: center;
 }
 
+#golfScoreArrows {
+  display: flex;
+}
+
+.tableInput {
+  width: 30px;
+}
+
 .submit {
   background-color: darkgreen;
   padding: 2px 5px;

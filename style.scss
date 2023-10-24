@@ -83,6 +83,12 @@ th, td{
 #teeBoxes{
 justify-content: center;
 }
+#golfScoreArrows{
+    display: flex;
+}
+.tableInput{
+    width: 30px
+}
 
 .submit{
     background-color: darkgreen;
