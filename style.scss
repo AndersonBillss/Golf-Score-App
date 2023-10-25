@@ -31,6 +31,7 @@ table{
 th, td{
     border: 3px gray solid;  
     padding: 3px 5px;  
+    background-color: white;
 }
 
 .containerRow.reverse{
@@ -113,6 +114,17 @@ justify-content: center;
 .players input{
     width: 100px;
 }
+td input{
+    width: 50px;
+    font-size: 20px;
+    border: none;
+    box-sizing: border-box;
+    text-align: center;
+    font-family: Arimo, Timos, Cousine;
+}
+td:has(input){
+    padding: 0;
+}
 .button:hover{
     filter: brightness(90%);
     cursor: pointer;
@@ -130,6 +142,7 @@ justify-content: center;
     margin: 0 25px;
     color: gray;
     font-size: 36px;
+    width:50px;
 }
 
 .red{
@@ -160,6 +173,9 @@ justify-content: center;
     table{
         font-size: 24px;
     }
+    td input{
+        font-size: 24px;
+    }
 }
 @media (min-width:1000px){
     option{
@@ -168,12 +184,18 @@ justify-content: center;
     table{
         font-size: 22px;
     }
+    td input{
+        font-size: 22px;
+    }
 }
 @media (max-width:500px){
     option{
         font-size: 14px;
     }
     table{
+        font-size: 16px;
+    }
+    td input{
         font-size: 16px;
     }
 

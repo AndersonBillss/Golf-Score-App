@@ -1,9 +1,5 @@
 document.querySelector("#test").addEventListener("click", () => {
-    document.getElementById('golfScorePrevArrow').addEventListener('click', () => {
-        console.log('a')
-        currentRow = prevRow
-        renderTable()
-    })
+    console.log(totalScores)
 })
 
 class Player {
@@ -68,11 +64,6 @@ getAvailableCourses().then(value => {
     }
 })  
 
-function render(){
-
-}
-
-
 function selectCourse(){
     for(i=0; i<courses.length; i++){
         courses[i].classList.remove('selected')
@@ -80,19 +71,15 @@ function selectCourse(){
 
     scoreCardHtml = `
     <h2>` + this.innerText + `</h2>
-    <input type="number" min=1 max=30 id="playerCount" placeholder="Number of players">
+    <input type="number" min=1 max=4 id="playerCount" placeholder="Number of players">
     <div class="submit button" id="submitButton">submit</div>
     <div id="playerCountError" class="error"></div>
     `
     this.classList.add('selected')
     golfCourseId = this.value
-
     getGolfCourseDetails().then(value => {
         courseDetails = value
-
-
         document.getElementById('scorecard-container').innerHTML = scoreCardHtml
-
         document.getElementById('submitButton').addEventListener('click', enterNames)
         document.getElementById('playerCount').addEventListener('keydown', () => {
             if(event.key == 'Enter'){
@@ -106,9 +93,7 @@ function enterNames(){
     playerCount = Number(document.getElementById('playerCount').value)
     playerCountMax = Number(document.getElementById('playerCount').max)
     playerCountMin = Number(document.getElementById('playerCount').min)
-
     let playerEnterHtml = ``
-
     if(playerCount > playerCountMax){
         document.getElementById('playerCountError').innerText = `
         You can't have more than ` + playerCountMax + ` players
@@ -129,7 +114,6 @@ function enterNames(){
         playerEnterHtml += `<input type="text" class="playerName" placeholder="Player ` + (i + 1) + `" id="nameInput` + (i + 1) + `">`
     }
     playerEnterHtml += `</div>`
-
 
     let teeBoxes = courseDetails.holes[0].teeBoxes
     let teeBoxesHtml = `<ul class="containerRow reverse" id="teeBoxes">`
@@ -168,13 +152,11 @@ function checkNameValidity(){
     playerNamesHtml = document.getElementsByClassName('playerName')
     playerNames = []
 
-
     if(document.getElementsByClassName('teebox-selected').length == 0){
         document.getElementById('playerNameWarning').innerText = "Must select a tee type"  
         document.getElementById('playerNameSuggestion').innerText = ""
         return
     }
-
     for(i=0; i<playerNamesHtml.length; i++){
         playerNames[i] = playerNamesHtml[i].value.trim()
             if (playerNames[i] === ''){
@@ -190,7 +172,6 @@ function checkNameValidity(){
                     playerNames.splice(i,1)
                     renderScorecard()
                 })
-                
             }
             return
         }
@@ -202,10 +183,15 @@ function checkNameValidity(){
             }
         }
     }
-
+    
     renderScorecard()
 }
 
+
+let totalScores = []
+let yardageTotal
+let parTotal
+let HandicapTotal
 function renderScorecard(){
     if(document.getElementById('playerNameSuggestion') != null){
         document.getElementById('playerNameSuggestion').innerText = ""
@@ -215,9 +201,19 @@ function renderScorecard(){
         document.getElementById('scorecard-container').innerText = ""
     }
 
-    players = []
     for(i=0; i<playerNames.length; i++){
-        players[i] = new Player(playerNames[i])
+        if(players[i] == undefined){
+            players[i] = new Player(playerNames[i])
+        }
+        totalScores[i] = 0
+        for(j=0; j<Object.keys(courseDetails.holes).length; j++){
+                if(players[i].scores[j] == undefined){
+                players[i].scores[j] = ''
+            } 
+            if((players[i].scores[j] != '') && (players[i].scores[j] != 'DNF')){
+                totalScores[i] += Number(players[i].scores[j])
+            }
+        }
     }
     tableHtmlLabels = `<table id="golfScoreTable">`
     tableHtmlLabels += `
@@ -235,11 +231,20 @@ function renderScorecard(){
     }
     tableHtmlLabels += `</table>
     <div id="golfScoreArrows">
-        <div class="button arrow" id="leftGolfScoreArrow"></div>
-        <div class="button arrow" id="rightGolfScoreArrow"></div>
+        <div class="arrow" id="leftGolfScoreArrow"></div>
+        <div class="arrow" id="rightGolfScoreArrow"></div>
     </div>
     `
     currentRow = 0
+
+    yardageTotal = 0
+    parTotal = 0
+    HandicapTotal = 0
+    for(i=currentRow; i<Object.keys(courseDetails.holes).length; i++){
+        yardageTotal += courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].yards
+        parTotal += courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].par
+        HandicapTotal += courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].hcp
+    }
     renderTable()
 }
 
@@ -255,13 +260,19 @@ function renderTable(){
             golfScoreTableRow[1].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].yards + `</td>`
             golfScoreTableRow[2].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].par + `</td>`
             golfScoreTableRow[3].innerHTML += `<td>` + courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].hcp + `</td>`
-
+            for(j=0; j<Object.keys(players).length; j++){
+                golfScoreTableRow[4+j].innerHTML += `
+                <td><input id="`+i+`player`+j+`" class="player`+j+`" value=`+players[j].scores[i]+`></td>
+                `
+            }
             columnCount = i+1
             prevRow = columnCount-(rowLength+(columnCount-currentRow))
-
+            if(prevRow<0){
+                prevRow=0
+            }
             if(currentRow > 0){
                 document.getElementById('leftGolfScoreArrow').innerHTML = `
-                <i class="fa-solid fa-arrow-left" id="golfScorePrevArrow"></i>
+                <i class="fa-solid fa-arrow-left button" id="golfScorePrevArrow"></i>
                 `
                 document.getElementById('golfScorePrevArrow').addEventListener('click', () => {
                     currentRow = prevRow
@@ -271,7 +282,7 @@ function renderTable(){
         } else {
             if(i < Object.keys(courseDetails.holes).length){
                 document.getElementById('rightGolfScoreArrow').innerHTML = `
-                <i class="fa-solid fa-arrow-right" id="golfScoreNextArrow"></i>
+                <i class="fa-solid fa-arrow-right button" id="golfScoreNextArrow"></i>
                 `
                 rowLength = (i-currentRow)
                 document.getElementById('golfScoreNextArrow').addEventListener('click', () => {
@@ -279,11 +290,55 @@ function renderTable(){
                     renderTable()
                 })
             }
-            return
+            break
         }
-
+    }
+    golfScoreTableRow[0].innerHTML += `<td>Out</td>`
+    golfScoreTableRow[1].innerHTML += `<td>` + yardageTotal + `</td>`
+    golfScoreTableRow[2].innerHTML += `<td>` + parTotal + `</td>`
+    golfScoreTableRow[3].innerHTML += `<td>` + HandicapTotal + `</td>`
+    for(j=0; j<Object.keys(players).length; j++){
+        golfScoreTableRow[4+j].innerHTML += `<td>`+totalScores[j]+`</td>`
+        let playerScores = document.getElementsByClassName('player'+j)
+        for(n=0; n<playerScores.length;n++){
+            playerScores[n].addEventListener('blur', savePlayerScores)
+        }
     }
 }
+
+function savePlayerScores(){
+    if(Number(this.value)*0 != 0){
+        console.log(this.value)
+        if((this.value).toUpperCase() == 'D'){
+            this.value = 'DNF'
+        } else{
+            this.value=1
+        }
+    }
+    if(this.value != '' && this.value != 'DNF'){
+        this.value=Number(this.value)
+
+        if(this.value == 0){
+            this.value = 'DNF'
+        }
+        if(this.value < 0){
+            this.value = Math.abs(this.value)
+        }
+        if(this.value > 99){
+            this.value = 99
+        }
+    }
+
+    let id=this.id
+    let idNumLength=id.length-7
+    let scoreNumber = Number(id.slice(0,idNumLength))
+    let playerNumber = Number(id.slice(-1))
+    players[playerNumber].scores[scoreNumber] = this.value
+
+    renderScorecard()
+} 
+
+
 
 
 window.onresize = updateTableWidth
