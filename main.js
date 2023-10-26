@@ -1,5 +1,10 @@
 document.querySelector("#test").addEventListener("click", () => {
-    console.log(totalScores)
+console.log(players)
+console.log(courseDetails.holes[0].teeBoxes[selectedTeeBoxIndex].yards)
+})
+document.querySelector("#clearStorage").addEventListener("click", () => {
+    localStorage.clear()
+    console.log("cleared local storage")
 })
 
 class Player {
@@ -24,7 +29,10 @@ let scoreCardHtml = ''
 let playerNames = []
 let playerNamesHtml = []
 let players = []
+let resumeCourseName
+let resumeTeeBoxName
 let selectedTeeBoxIndex
+let view
 let golfScoreTableRow
 let tableElementNum
 let currentRow
@@ -32,6 +40,28 @@ let prevRow = 0
 let columnCount
 let tableHtmlLabels
 let rowLength
+let selectedCourseName
+let selectedTeeBoxIndexOption
+let totalScores = []
+let yardageTotal
+let parTotal
+let HandicapTotal
+if(localStorage.getItem('players') != null){
+    players = JSON.parse(localStorage.getItem('players'))
+    resumeCourseName = JSON.parse(localStorage.getItem('resumeCourseName'))
+    resumeTeeBoxName = JSON.parse(localStorage.getItem('resumeTeeBoxName'))
+    courseDetails = JSON.parse(localStorage.getItem('courseDetails'))
+    selectedTeeBoxIndex = localStorage.getItem('selectedTeeBoxIndex')
+    playerNames = JSON.parse(localStorage.getItem('playerNames'))
+    view = localStorage.getItem('view')
+}
+if(view == 'scorecard'){
+    renderScorecard()
+} else {
+    initialLoad()
+}
+
+
 
 async function getAvailableCourses() {
     const url = 'https://exquisite-pastelito-9d4dd1.netlify.app/golfapi/courses.json';
@@ -51,18 +81,35 @@ async function getAvailableCourses() {
 
 
 //get the array from the API, render it, then add event listeners to the options
-getAvailableCourses().then(value => {
-    golfCourses = value
-    golfCourses.forEach (function (teeBox){
-        golfCourseSelectHtml += `<option class="course button" value="` + teeBox.id + `">` + teeBox.name + `</option>`
-    })
-    document.getElementById('options-container').innerHTML = golfCourseSelectHtml
+function initialLoad(){
+    view = 'selectCourse'
+    localStorage.setItem('view', view)
 
-    courses = document.getElementsByClassName('course')
-    for(i=0; i<courses.length; i++){
-        courses[i].addEventListener('click', selectCourse)
-    }
-})  
+    getAvailableCourses().then(value => {
+            golfCourseSelectHtml = ``
+            golfCourses = value
+        golfCourses.forEach (function (teeBox){
+            golfCourseSelectHtml += `<option class="course button" value="` + teeBox.id + `">` + teeBox.name + `</option>`
+        })
+        document.getElementById('options-container').innerHTML = golfCourseSelectHtml
+
+        if(Object.keys(players).length > 0){
+            document.getElementById('button-container').innerHTML = `
+            <button id="resume-game" class="resume button">
+            Resume Game? (`+Object.keys(players).length+` players, `+resumeCourseName+`, teetype: `+resumeTeeBoxName+`)
+            </button>
+            `
+            document.getElementById('resume-game').addEventListener('click', renderScorecard)
+        }
+    
+        courses = document.getElementsByClassName('course')
+        for(i=0; i<courses.length; i++){
+            courses[i].addEventListener('click', selectCourse)
+        }
+    })  
+
+}
+
 
 function selectCourse(){
     for(i=0; i<courses.length; i++){
@@ -76,6 +123,9 @@ function selectCourse(){
     <div id="playerCountError" class="error"></div>
     `
     this.classList.add('selected')
+
+    selectedCourseName = this.innerHTML
+
     golfCourseId = this.value
     getGolfCourseDetails().then(value => {
         courseDetails = value
@@ -109,11 +159,18 @@ function enterNames(){
     document.getElementById('playerCountError').innerText = ``
     document.getElementById('playerCount').value = ``
 
-    playerEnterHtml += `<div class="containerRow players">`
+    playerEnterHtml += `<div class="containerRow players" id="player-names-container">`
     for(i=0; i<playerCount; i++){
         playerEnterHtml += `<input type="text" class="playerName" placeholder="Player ` + (i + 1) + `" id="nameInput` + (i + 1) + `">`
     }
-    playerEnterHtml += `</div>`
+    playerEnterHtml += `</div>
+    <div class="add-subtract-players">
+        <i class="fa-solid fa-minus player-count button" id="remove-player"></i>
+        <i class="fa-solid fa-plus player-count button" id="add-player"></i>
+    </div>
+    `
+
+
 
     let teeBoxes = courseDetails.holes[0].teeBoxes
     let teeBoxesHtml = `<ul class="containerRow reverse" id="teeBoxes">`
@@ -139,9 +196,27 @@ function enterNames(){
                 teeBoxOption[j].classList.remove('teebox-selected')
             }
             this.classList.add('teebox-selected')
-            selectedTeeBoxIndex = Number(this.id.slice(-1))
+            selectedTeeBoxIndexOption = Number(this.id.slice(-1))
         })
     }
+
+    document.getElementById('add-player').addEventListener('click', () => {
+        if(playerCount < playerCountMax){
+            playerCount++
+            document.getElementById('player-names-container').innerHTML += `
+            <input type="text" class="playerName" placeholder="Player ` + playerCount + `" id="nameInput` + playerCount + `">
+            `
+        }
+    })
+    document.getElementById('remove-player').addEventListener('click', () => {
+        if(playerCount > playerCountMin){
+            playerCount--
+            if(document.getElementById('player-names-container').lastChild.length > 5){
+                document.getElementById('player-names-container').lastChild.remove()
+            }
+            document.getElementById('player-names-container').lastChild.remove()
+        }
+    })
 
     document.getElementById('confirmPlayerNames').addEventListener('click', checkNameValidity)
 
@@ -149,6 +224,7 @@ function enterNames(){
 
 
 function checkNameValidity(){
+    selectedTeeBoxIndex = selectedTeeBoxIndexOption
     playerNamesHtml = document.getElementsByClassName('playerName')
     playerNames = []
 
@@ -170,6 +246,10 @@ function checkNameValidity(){
                 document.getElementById('playerNameSuggestion').addEventListener('click', function(){
                     playerCount = i
                     playerNames.splice(i,1)
+
+                    players = []
+                    resumeCourseName = selectedCourseName
+                    resumeTeeBoxName = courseDetails.holes[0].teeBoxes[selectedTeeBoxIndex].teeType
                     renderScorecard()
                 })
             }
@@ -183,23 +263,36 @@ function checkNameValidity(){
             }
         }
     }
+    players = []
+    resumeCourseName = selectedCourseName
+    resumeTeeBoxName = courseDetails.holes[0].teeBoxes[selectedTeeBoxIndex].teeType
+
     
+    let resumeCourseNameString = JSON.stringify(resumeCourseName)
+    let resumeTeeBoxNameString = JSON.stringify(resumeTeeBoxName)
+    let courseDetailsString = JSON.stringify(courseDetails)
+    let playerNamesString = JSON.stringify(playerNames)
+    localStorage.setItem('resumeCourseName', resumeCourseNameString)
+    localStorage.setItem('resumeTeeBoxName', resumeTeeBoxNameString)
+    localStorage.setItem('courseDetails', courseDetailsString)
+    localStorage.setItem('selectedTeeBoxIndex', selectedTeeBoxIndex)
+    localStorage.setItem('playerNames', playerNamesString)
     renderScorecard()
 }
 
 
-let totalScores = []
-let yardageTotal
-let parTotal
-let HandicapTotal
+
 function renderScorecard(){
+    view = 'scorecard'
+    localStorage.setItem('view', view)
+
     if(document.getElementById('playerNameSuggestion') != null){
         document.getElementById('playerNameSuggestion').innerText = ""
         document.getElementById('playerNameWarning').innerText = ""
         document.getElementById('header').innerText = ""
-        document.getElementById('options-container').innerText = ""
         document.getElementById('scorecard-container').innerText = ""
     }
+    document.getElementById('options-container').innerText = ""
 
     for(i=0; i<playerNames.length; i++){
         if(players[i] == undefined){
@@ -207,7 +300,7 @@ function renderScorecard(){
         }
         totalScores[i] = 0
         for(j=0; j<Object.keys(courseDetails.holes).length; j++){
-                if(players[i].scores[j] == undefined){
+            if(players[i].scores[j] == undefined){
                 players[i].scores[j] = ''
             } 
             if((players[i].scores[j] != '') && (players[i].scores[j] != 'DNF')){
@@ -245,7 +338,15 @@ function renderScorecard(){
         parTotal += courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].par
         HandicapTotal += courseDetails.holes[i].teeBoxes[selectedTeeBoxIndex].hcp
     }
+
     renderTable()
+    document.getElementById('button-container').innerHTML = `<button class="back button" id="back-button">back</button>`
+    document.getElementById('back-button').addEventListener('click', () =>{
+        initialLoad()
+        document.getElementById('scorecard-container').innerHTML=""
+        document.getElementById('button-container').innerHTML=""
+    })
+
 }
 
 
@@ -293,7 +394,7 @@ function renderTable(){
             break
         }
     }
-    golfScoreTableRow[0].innerHTML += `<td>Out</td>`
+    golfScoreTableRow[0].innerHTML += `<td>Total</td>`
     golfScoreTableRow[1].innerHTML += `<td>` + yardageTotal + `</td>`
     golfScoreTableRow[2].innerHTML += `<td>` + parTotal + `</td>`
     golfScoreTableRow[3].innerHTML += `<td>` + HandicapTotal + `</td>`
@@ -304,16 +405,14 @@ function renderTable(){
             playerScores[n].addEventListener('blur', savePlayerScores)
         }
     }
+    let playerString = JSON.stringify(players)
+    localStorage.setItem("players", playerString)
 }
 
 function savePlayerScores(){
-    if(Number(this.value)*0 != 0){
-        console.log(this.value)
-        if((this.value).toUpperCase() == 'D'){
-            this.value = 'DNF'
-        } else{
-            this.value=1
-        }
+    this.value = (this.value).toUpperCase()
+    if(Number(this.value)*0 != 0 && this.value != 'DNF'){
+        this.value=1
     }
     if(this.value != '' && this.value != 'DNF'){
         this.value=Number(this.value)

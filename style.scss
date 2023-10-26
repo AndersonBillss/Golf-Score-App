@@ -87,10 +87,26 @@ justify-content: center;
 #golfScoreArrows{
     display: flex;
 }
-.tableInput{
-    width: 30px
+#player-count-button-container{
+    align-self: start;
 }
 
+.tableInput{
+    width: 30px;
+    margin: 0;
+}
+#player-count-button-container i {
+    margin: 2px;
+    font-size: 20px;
+}
+.back{
+    background-color: darkred;
+    padding: 2px 5px;
+    margin: 15px;
+    border-radius: 5px;
+    color: lightgrey;
+    width: min-content; 
+}
 .submit{
     background-color: darkgreen;
     padding: 2px 5px;
@@ -113,6 +129,7 @@ justify-content: center;
 }
 .players input{
     width: 100px;
+    margin: 15px;
 }
 td input{
     width: 50px;
@@ -143,6 +160,16 @@ td:has(input){
     color: gray;
     font-size: 36px;
     width:50px;
+}
+.player-count{
+    margin: 0 15px;
+    color: gray;
+    font-size: 24px;
+    width:50px; 
+}
+.resume{
+    padding: 2px 5px;
+    margin: 15px;
 }
 
 .red{
