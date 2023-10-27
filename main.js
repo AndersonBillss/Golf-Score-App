@@ -1,11 +1,9 @@
-document.querySelector("#test").addEventListener("click", () => {
-console.log(players)
-console.log(courseDetails.holes[0].teeBoxes[selectedTeeBoxIndex].yards)
+/* document.querySelector("#test").addEventListener("click", () => {
 })
 document.querySelector("#clearStorage").addEventListener("click", () => {
     localStorage.clear()
     console.log("cleared local storage")
-})
+}) */
 
 class Player {
     constructor(name, id = getNextId(), scores = []) {
@@ -35,7 +33,7 @@ let selectedTeeBoxIndex
 let view
 let golfScoreTableRow
 let tableElementNum
-let currentRow
+let currentRow = 0
 let prevRow = 0
 let columnCount
 let tableHtmlLabels
@@ -82,6 +80,7 @@ async function getAvailableCourses() {
 
 //get the array from the API, render it, then add event listeners to the options
 function initialLoad(){
+    document.getElementById('scorecard-container').innerHTML = ''
     view = 'selectCourse'
     localStorage.setItem('view', view)
 
@@ -264,9 +263,9 @@ function checkNameValidity(){
         }
     }
     players = []
+    currentRow = 0
     resumeCourseName = selectedCourseName
     resumeTeeBoxName = courseDetails.holes[0].teeBoxes[selectedTeeBoxIndex].teeType
-
     
     let resumeCourseNameString = JSON.stringify(resumeCourseName)
     let resumeTeeBoxNameString = JSON.stringify(resumeTeeBoxName)
@@ -294,10 +293,12 @@ function renderScorecard(){
     }
     document.getElementById('options-container').innerText = ""
 
+    let emptySpaces = 0
     for(i=0; i<playerNames.length; i++){
         if(players[i] == undefined){
             players[i] = new Player(playerNames[i])
         }
+        let DNF = false
         totalScores[i] = 0
         for(j=0; j<Object.keys(courseDetails.holes).length; j++){
             if(players[i].scores[j] == undefined){
@@ -306,7 +307,31 @@ function renderScorecard(){
             if((players[i].scores[j] != '') && (players[i].scores[j] != 'DNF')){
                 totalScores[i] += Number(players[i].scores[j])
             }
+            if(players[i].scores[j] == 'DNF'){
+                DNF = true
+            }
+            if(players[i].scores[j] == ''){
+                emptySpaces++
+            }
         }
+        if(DNF == true){
+            totalScores[i] = "DNF"
+        }
+    }
+    document.getElementById('button-container').innerHTML = `<button class="back button" id="back-button">back</button>`
+    document.getElementById('back-button').addEventListener('click', () =>{
+        initialLoad()
+        document.getElementById('scorecard-container').innerHTML=""
+        document.getElementById('button-container').innerHTML=""
+    })
+    if(emptySpaces == 0){
+        document.getElementById('button-container').innerHTML += `<button class="submit button" id="view-results-button">View Results</button>`
+        document.getElementById('view-results-button').addEventListener('click', winMessage)
+        document.getElementById('back-button').addEventListener('click', () =>{
+            initialLoad()
+            document.getElementById('scorecard-container').innerHTML=""
+            document.getElementById('button-container').innerHTML=""
+        })
     }
     tableHtmlLabels = `<table id="golfScoreTable">`
     tableHtmlLabels += `
@@ -328,8 +353,6 @@ function renderScorecard(){
         <div class="arrow" id="rightGolfScoreArrow"></div>
     </div>
     `
-    currentRow = 0
-
     yardageTotal = 0
     parTotal = 0
     HandicapTotal = 0
@@ -340,12 +363,7 @@ function renderScorecard(){
     }
 
     renderTable()
-    document.getElementById('button-container').innerHTML = `<button class="back button" id="back-button">back</button>`
-    document.getElementById('back-button').addEventListener('click', () =>{
-        initialLoad()
-        document.getElementById('scorecard-container').innerHTML=""
-        document.getElementById('button-container').innerHTML=""
-    })
+
 
 }
 
@@ -437,7 +455,90 @@ function savePlayerScores(){
     renderScorecard()
 } 
 
+function winMessage(){
+    document.getElementById('view-results-button').remove()
+    document.getElementById('back-button').remove()
 
+//sort the scores and players in order of total score
+    winMessageHtml = `<ul class="win-message">`
+    let place = ''
+    if(Object.keys(players).length != 1){
+        for(i=0; i<totalScores.length; i++){
+            if(totalScores[i] == 'DNF'){
+                totalScores[i] = 10000
+            }
+            for(j=0; j<totalScores.length; j++){
+                if(totalScores[i]<totalScores[j]){
+                    let bigNumber = totalScores[j]
+                    let smallNumber = totalScores[i]
+                    let p1 = players[i]
+                    let p2 = players[j]
+                    totalScores[j] = smallNumber
+                    totalScores[i] = bigNumber
+                    players[j] = p1
+                    players[i] = p2
+                }
+
+            }
+        }
+        //display final scores
+        let n=0
+        for(i=0; i<Object.keys(players).length; i++){
+            console.log(i)
+            if(i-n==0){
+                place = 'first'
+            }
+            if(i-n==1){
+                place = 'second'
+            }
+            if(i-n==2){
+                place = 'third'
+            }
+            if(i-n==3){
+                place = 'fourth'
+            }
+            if(totalScores[i] == 10000){
+                winMessageHtml += `<li class="score placeDNF">` + players[i].name + ` did not finish</li>`
+            } else
+            if(totalScores[i] == totalScores[i+1] && totalScores[i+1] == totalScores[i+2] && totalScores[i+2] == totalScores[i+3]){
+                winMessageHtml += `<li class="score">Everyone tied with ` + totalScores[i] + ` net strokes!</li>`
+                i+=3
+                n+=3
+            } else
+            if(totalScores[i] == totalScores[i+1] && totalScores[i+1] == totalScores[i+2]){
+                if(Object.keys(players).length == 3){
+                    winMessageHtml += `<li class="score">Everyone tied with ` + totalScores[i] + ` net strokes!</li>`
+                } else {
+                    winMessageHtml += `<li class="score place` + (i+1-n) +`">` + players[i].name + `, ` + players[i+1].name + `, and ` + players[i+2].name + ` tied at ` + place + ` place with ` + totalScores[i] + ` net strokes!</li>`
+                }
+                i+=2
+                n+=2
+            } else
+            if(totalScores[i] == totalScores[i+1]){
+                if(Object.keys(players).length == 2){
+                    winMessageHtml += `<li class="score">Everyone tied with ` + totalScores[i] + ` net strokes!</li>`
+                } else {
+                    winMessageHtml += `<li class="score place` + (i+1-n) +`">` + players[i].name + ` tied with ` + players[i+1].name + ` at ` + place + ` place with ` + totalScores[i] + ` net strokes!</li>`
+                }
+                i++
+                n++
+            } else {
+                winMessageHtml += `<li class="score place` + (i+1-n) +`">` + players[i].name + ` got ` + place + ` place with ` + totalScores[i] + ` net strokes!</li>`
+            }
+        } 
+    } else {
+       winMessageHtml += `<li class="score">you completed the course with ` + totalScores[0] + ` strokes!<li>`
+    }
+    winMessageHtml += `</ul>`
+    document.getElementById('scorecard-container').innerHTML = winMessageHtml
+    document.getElementById('button-container').innerHTML = `<button class="submit button" id="return-button">Return to Home Screen</button>`
+    document.getElementById('return-button').addEventListener('click', () =>{
+        document.getElementById('return-button').remove()
+        players = []
+        localStorage.clear()   
+        initialLoad()
+    })
+}
 
 
 window.onresize = updateTableWidth
